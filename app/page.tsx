@@ -455,7 +455,7 @@ function ReportDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg glass border-border/50 max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg bg-background border-border shadow-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-foreground text-xl">
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-destructive/15 border border-destructive/20">
@@ -535,8 +535,8 @@ function ReportDialog({
                     type="button"
                     onClick={() => toggleCategory(cat)}
                     className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-all cursor-pointer ${isSelected
-                        ? `${config.bgColor} border-current/40 ring-1 ring-current/20`
-                        : "border-border/50 text-muted-foreground hover:border-border hover:text-foreground bg-secondary/30"
+                      ? `${config.bgColor} border-current/40 ring-1 ring-current/20`
+                      : "border-border/50 text-muted-foreground hover:border-border hover:text-foreground bg-secondary/30"
                       }`}
                   >
                     <IconComp className="w-3 h-3" />
@@ -637,8 +637,8 @@ function CategoryFilter({
       <button
         onClick={() => onFilterChange(null)}
         className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${activeFilter === null
-            ? "bg-primary/20 border-primary/40 text-primary"
-            : "border-border/50 text-muted-foreground hover:border-border hover:text-foreground"
+          ? "bg-primary/20 border-primary/40 text-primary"
+          : "border-border/50 text-muted-foreground hover:border-border hover:text-foreground"
           }`}
       >
         ทั้งหมด
@@ -656,8 +656,8 @@ function CategoryFilter({
               onFilterChange(activeFilter === cat ? null : cat)
             }
             className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${activeFilter === cat
-                ? `${config.bgColor} ring-1 ring-current/20`
-                : "border-border/50 text-muted-foreground hover:border-border hover:text-foreground"
+              ? `${config.bgColor} ring-1 ring-current/20`
+              : "border-border/50 text-muted-foreground hover:border-border hover:text-foreground"
               }`}
           >
             <IconComp className="w-3 h-3" />
