@@ -1,0 +1,19 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ตารางของคุณ
+model Report {
+  id           String   @id @default(uuid())
+  dmName       String
+  facebook     String?
+  discord      String?
+  reason       String   @db.Text
+  categories   String[]
+  evidenceUrl  String?
+  createdAt    DateTime @default(now())
+}
