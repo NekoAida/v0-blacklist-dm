@@ -20,6 +20,8 @@ import {
   ScrollText,
   ChevronDown,
   Sparkles,
+  Facebook,
+  MessageCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -60,6 +62,8 @@ type CategoryTag =
 interface BlacklistReport {
   id: string;
   dmName: string;
+  facebook?: string;
+  discord?: string;
   reason: string;
   categories: CategoryTag[];
   evidenceUrl?: string;
@@ -72,6 +76,8 @@ const MOCK_REPORTS: BlacklistReport[] = [
   {
     id: "1",
     dmName: "DarkLord_Kevin",
+    facebook: "kevin.darklord.dm",
+    discord: "DarkLord_Kevin#6666",
     reason:
       "กดดันผู้เล่นอย่างรุนแรง ใช้คำพูดหยาบคาย บังคับให้ตัวละครผู้เล่นตายโดยไม่มีเหตุผลที่สมเหตุสมผล พอผู้เล่นคนใดถามคำถามเกี่ยวกับกฎ จะตะโกนใส่และบอกว่า 'DM is always right' แล้วก็คิกออกจากเซิร์ฟเวอร์ Discord ทันที มีผู้เล่น 3 คนที่ได้รับผลกระทบ",
     categories: ["Harassment", "Rude", "God Moding"],
@@ -81,6 +87,7 @@ const MOCK_REPORTS: BlacklistReport[] = [
   {
     id: "2",
     dmName: "MysticMage42",
+    facebook: "mystic.mage.42",
     reason:
       "รับเงินค่าเซสชัน 500 บาทต่อคน แล้วหายไปเลย ไม่มาเล่นตามนัด ทำแบบนี้ซ้ำกับหลายกลุ่ม พอทวงเงินก็บล็อก ไม่สามารถติดต่อได้อีกเลย มีหลักฐานการโอนเงินและแชทที่นัดหมายกัน",
     categories: ["Scammer", "Ghosting"],
@@ -90,6 +97,7 @@ const MOCK_REPORTS: BlacklistReport[] = [
   {
     id: "3",
     dmName: "RulebreakerDM",
+    discord: "RulebreakerDM#1234",
     reason:
       "ใช้ metagaming ตลอดเวลา NPC รู้ทุกอย่างที่ผู้เล่นพูดคุยกันนอกเกม เปลี่ยนกฎกลางคันเพื่อให้ตัวละคร NPC ของตัวเองชนะเสมอ ลำเอียงกับผู้เล่นบางคนอย่างชัดเจน ทำให้เกมไม่สนุกเลย เล่นมา 4 เซสชันก่อนที่จะทนไม่ไหว",
     categories: ["Cheating", "Metagaming", "Favoritism"],
@@ -98,6 +106,8 @@ const MOCK_REPORTS: BlacklistReport[] = [
   {
     id: "4",
     dmName: "PhantomDM_TH",
+    facebook: "phantom.dm.thailand",
+    discord: "PhantomDM#9999",
     reason:
       "นัดเล่นทุกสัปดาห์ แต่ยกเลิกนาทีสุดท้ายตลอด 5 ครั้งติดต่อกัน ผู้เล่นสร้างตัวละครมาอย่างดี เตรียมตัวมาทุกครั้ง แต่ DM ไม่เคยมา ไม่แจ้งล่วงหน้า บางทีก็ไม่ตอบข้อความเลยจนถึงวันถัดไป",
     categories: ["Ghosting"],
@@ -322,6 +332,29 @@ function BlacklistCard({ report }: { report: BlacklistReport }) {
             </div>
           </div>
         </div>
+
+        {/* Social Contacts */}
+        {(report.facebook || report.discord) && (
+          <div className="flex flex-wrap gap-3 mt-2">
+            {report.facebook && (
+              <a
+                href={`https://facebook.com/${report.facebook}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-blue-400 transition-colors"
+              >
+                <Facebook className="w-3.5 h-3.5" />
+                <span className="truncate max-w-[140px]">{report.facebook}</span>
+              </a>
+            )}
+            {report.discord && (
+              <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-indigo-400 transition-colors">
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span className="truncate max-w-[140px]">{report.discord}</span>
+              </span>
+            )}
+          </div>
+        )}
       </CardHeader>
 
       <CardContent className="pt-0">
@@ -379,6 +412,8 @@ function ReportDialog({
   onSubmit: (report: BlacklistReport) => void;
 }) {
   const [dmName, setDmName] = useState("");
+  const [facebook, setFacebook] = useState("");
+  const [discord, setDiscord] = useState("");
   const [reason, setReason] = useState("");
   const [evidenceUrl, setEvidenceUrl] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<CategoryTag[]>(
@@ -397,6 +432,8 @@ function ReportDialog({
     const newReport: BlacklistReport = {
       id: Date.now().toString(),
       dmName: dmName.trim(),
+      facebook: facebook.trim() || undefined,
+      discord: discord.trim() || undefined,
       reason: reason.trim(),
       categories:
         selectedCategories.length > 0 ? selectedCategories : ["Rude"],
@@ -406,6 +443,8 @@ function ReportDialog({
 
     onSubmit(newReport);
     setDmName("");
+    setFacebook("");
+    setDiscord("");
     setReason("");
     setEvidenceUrl("");
     setSelectedCategories([]);
@@ -444,6 +483,42 @@ function ReportDialog({
             />
           </div>
 
+          {/* Facebook & Discord */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="facebook" className="text-foreground font-medium">
+                Facebook{" "}
+                <span className="text-muted-foreground font-normal">— ไม่บังคับ</span>
+              </Label>
+              <div className="relative">
+                <Facebook className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="facebook"
+                  placeholder="ชื่อ Facebook"
+                  value={facebook}
+                  onChange={(e) => setFacebook(e.target.value)}
+                  className="pl-9 bg-secondary/50 border-border/50 focus:border-primary"
+                />
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="discord" className="text-foreground font-medium">
+                Discord{" "}
+                <span className="text-muted-foreground font-normal">— ไม่บังคับ</span>
+              </Label>
+              <div className="relative">
+                <MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="discord"
+                  placeholder="Username#1234"
+                  value={discord}
+                  onChange={(e) => setDiscord(e.target.value)}
+                  className="pl-9 bg-secondary/50 border-border/50 focus:border-primary"
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Categories */}
           <div className="flex flex-col gap-2">
             <Label className="text-foreground font-medium">
@@ -459,11 +534,10 @@ function ReportDialog({
                     key={cat}
                     type="button"
                     onClick={() => toggleCategory(cat)}
-                    className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-all cursor-pointer ${
-                      isSelected
+                    className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-all cursor-pointer ${isSelected
                         ? `${config.bgColor} border-current/40 ring-1 ring-current/20`
                         : "border-border/50 text-muted-foreground hover:border-border hover:text-foreground bg-secondary/30"
-                    }`}
+                      }`}
                   >
                     <IconComp className="w-3 h-3" />
                     {cat}
@@ -562,11 +636,10 @@ function CategoryFilter({
     <div className="flex flex-wrap gap-2 justify-center">
       <button
         onClick={() => onFilterChange(null)}
-        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
-          activeFilter === null
+        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${activeFilter === null
             ? "bg-primary/20 border-primary/40 text-primary"
             : "border-border/50 text-muted-foreground hover:border-border hover:text-foreground"
-        }`}
+          }`}
       >
         ทั้งหมด
         <span className="text-[10px] opacity-60">({reports.length})</span>
@@ -582,11 +655,10 @@ function CategoryFilter({
             onClick={() =>
               onFilterChange(activeFilter === cat ? null : cat)
             }
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
-              activeFilter === cat
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${activeFilter === cat
                 ? `${config.bgColor} ring-1 ring-current/20`
                 : "border-border/50 text-muted-foreground hover:border-border hover:text-foreground"
-            }`}
+              }`}
           >
             <IconComp className="w-3 h-3" />
             {cat}
