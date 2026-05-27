@@ -48,6 +48,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { createReport } from "@/app/actions/report";
+import { supabase } from "@/lib/supabasse";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -372,7 +373,8 @@ function ReportDialog({
   const [facebook, setFacebook] = useState("");
   const [discord, setDiscord] = useState("");
   const [reason, setReason] = useState("");
-  const [evidenceUrl, setEvidenceUrl] = useState("");
+  const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
+  const [evidencePreview, setEvidencePreview] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<CategoryTag[]>(
     []
   );
@@ -390,13 +392,31 @@ function ReportDialog({
     setIsSubmitting(true);
 
     try {
+      let uploadedUrl: string | undefined = undefined;
+
+      if (evidenceFile) {
+        const fileExt = evidenceFile.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("evidence")
+          .upload(fileName, evidenceFile);
+
+        if (uploadError) {
+          throw new Error("อัปโหลดรูปภาพหลักฐานไม่สำเร็จ: " + uploadError.message);
+        }
+
+        const { data } = supabase.storage.from("evidence").getPublicUrl(fileName);
+        uploadedUrl = data.publicUrl;
+      }
+
       const response = await createReport({
         dmName: dmName.trim(),
         facebook: facebook.trim() || undefined,
         discord: discord.trim() || undefined,
         reason: reason.trim(),
         categories: selectedCategories.length > 0 ? selectedCategories : ["Rude"],
-        evidenceUrl: evidenceUrl.trim() || undefined,
+        evidenceUrl: uploadedUrl,
       });
 
       if (response.success && response.data) {
@@ -419,7 +439,8 @@ function ReportDialog({
         setFacebook("");
         setDiscord("");
         setReason("");
-        setEvidenceUrl("");
+        setEvidenceFile(null);
+        setEvidencePreview(null);
         setSelectedCategories([]);
         onOpenChange(false);
       } else {
@@ -547,24 +568,49 @@ function ReportDialog({
           {/* Evidence */}
           <div className="flex flex-col gap-2">
             <Label
-              htmlFor="evidence-url"
+              htmlFor="evidence-file"
               className="text-foreground font-medium"
             >
-              หลักฐาน (URL รูปภาพ){" "}
+              หลักฐาน (รูปภาพ){" "}
               <span className="text-muted-foreground font-normal">
                 — ไม่บังคับ
               </span>
             </Label>
-            <div className="relative">
-              <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <div className="flex flex-col gap-3">
               <Input
-                id="evidence-url"
-                type="url"
-                placeholder="https://imgur.com/..."
-                value={evidenceUrl}
-                onChange={(e) => setEvidenceUrl(e.target.value)}
-                className="pl-9 bg-secondary/50 border-border/50 focus:border-primary"
+                id="evidence-file"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setEvidenceFile(file);
+                    setEvidencePreview(URL.createObjectURL(file));
+                  } else {
+                    setEvidenceFile(null);
+                    setEvidencePreview(null);
+                  }
+                }}
+                className="bg-secondary/50 border-border/50 focus:border-primary file:bg-primary/20 file:text-primary file:border-0 file:rounded-md file:px-3 file:py-1 hover:file:bg-primary/30 file:mr-4 file:transition-colors file:cursor-pointer"
               />
+              {evidencePreview && (
+                <div className="relative w-full max-w-sm rounded-lg border border-border/50 overflow-hidden bg-secondary/30 mt-2 group">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={evidencePreview} alt="Evidence Preview" className="w-full h-auto object-contain max-h-48" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEvidenceFile(null);
+                      setEvidencePreview(null);
+                      const fileInput = document.getElementById("evidence-file") as HTMLInputElement;
+                      if (fileInput) fileInput.value = "";
+                    }}
+                    className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
