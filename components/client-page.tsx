@@ -47,7 +47,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-import { addReport } from "@/app/actions";
+import { createReport } from "@/app/actions/report";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -362,11 +362,11 @@ function BlacklistCard({ report }: { report: BlacklistReport }) {
 function ReportDialog({
   open,
   onOpenChange,
-  onSubmit,
+  onSuccess,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (report: BlacklistReport) => void;
+  onSuccess: (report: BlacklistReport) => void;
 }) {
   const [dmName, setDmName] = useState("");
   const [facebook, setFacebook] = useState("");
@@ -376,6 +376,7 @@ function ReportDialog({
   const [selectedCategories, setSelectedCategories] = useState<CategoryTag[]>(
     []
   );
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toggleCategory = (cat: CategoryTag) => {
     setSelectedCategories((prev) =>
@@ -383,29 +384,53 @@ function ReportDialog({
     );
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!dmName.trim() || !reason.trim()) return;
 
-    const newReport: BlacklistReport = {
-      id: Date.now().toString(),
-      dmName: dmName.trim(),
-      facebook: facebook.trim() || undefined,
-      discord: discord.trim() || undefined,
-      reason: reason.trim(),
-      categories:
-        selectedCategories.length > 0 ? selectedCategories : ["Rude"],
-      evidenceUrl: evidenceUrl.trim() || undefined,
-      dateReported: new Date().toISOString().split("T")[0],
-    };
+    setIsSubmitting(true);
 
-    onSubmit(newReport);
-    setDmName("");
-    setFacebook("");
-    setDiscord("");
-    setReason("");
-    setEvidenceUrl("");
-    setSelectedCategories([]);
-    onOpenChange(false);
+    try {
+      const response = await createReport({
+        dmName: dmName.trim(),
+        facebook: facebook.trim() || undefined,
+        discord: discord.trim() || undefined,
+        reason: reason.trim(),
+        categories: selectedCategories.length > 0 ? selectedCategories : ["Rude"],
+        evidenceUrl: evidenceUrl.trim() || undefined,
+      });
+
+      if (response.success && response.data) {
+        alert("บันทึกรายงานสำเร็จ!");
+
+        // แปลงข้อมูลเพื่ออัปเดต UI ทันที
+        const newReport: BlacklistReport = {
+          id: response.data.id,
+          dmName: response.data.dmName,
+          facebook: response.data.facebook || undefined,
+          discord: response.data.discord || undefined,
+          reason: response.data.reason,
+          categories: response.data.categories as CategoryTag[],
+          evidenceUrl: response.data.evidenceUrl || undefined,
+          dateReported: response.data.createdAt.toISOString().split("T")[0],
+        };
+
+        onSuccess(newReport);
+        setDmName("");
+        setFacebook("");
+        setDiscord("");
+        setReason("");
+        setEvidenceUrl("");
+        setSelectedCategories([]);
+        onOpenChange(false);
+      } else {
+        alert(response.error || "เกิดข้อผิดพลาดในการส่งรายงาน");
+      }
+    } catch (error) {
+      alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const isValid = dmName.trim().length > 0 && reason.trim().length > 0;
@@ -555,12 +580,16 @@ function ReportDialog({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!isValid}
+            disabled={!isValid || isSubmitting}
             className="bg-destructive hover:bg-destructive/90 text-white gap-1.5"
             id="submit-report-btn"
           >
-            <AlertTriangle className="w-4 h-4" />
-            ส่งรายงาน
+            {isSubmitting ? (
+              <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+            ) : (
+              <AlertTriangle className="w-4 h-4" />
+            )}
+            {isSubmitting ? "กำลังส่งข้อมูล..." : "ส่งรายงาน"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -635,23 +664,9 @@ export default function ClientPage({ initialReports }: { initialReports: Blackli
     null
   );
 
-  const handleSubmitReport = useCallback(async (newReport: BlacklistReport) => {
-    // Add to UI immediately for better UX
+  const handleSuccess = useCallback((newReport: BlacklistReport) => {
+    // Add to UI immediately
     setReports((prev) => [newReport, ...prev]);
-
-    // Save to DB
-    try {
-      await addReport({
-        dmName: newReport.dmName,
-        facebook: newReport.facebook,
-        discord: newReport.discord,
-        reason: newReport.reason,
-        categories: newReport.categories,
-        evidenceUrl: newReport.evidenceUrl,
-      });
-    } catch (error) {
-      console.error("Failed to add report", error);
-    }
   }, []);
 
   const filteredReports = useMemo(() => {
@@ -852,7 +867,7 @@ export default function ClientPage({ initialReports }: { initialReports: Blackli
       <ReportDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        onSubmit={handleSubmitReport}
+        onSuccess={handleSuccess}
       />
     </div>
   );
