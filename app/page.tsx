@@ -1,6 +1,8 @@
 import prisma from "@/lib/prisma";
 import ClientPage, { BlacklistReport, CategoryTag } from "@/components/client-page";
 
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
   // ดึงข้อมูลจากฐานข้อมูลผ่าน Prisma (เรียงจากใหม่ไปเก่า)
   const dbReports = await prisma.report.findMany({
